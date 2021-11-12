@@ -1,18 +1,11 @@
 import argparse
+import torch
+import torch.nn as nn
+from training import DataLoadSplit, TrainingRNN
 from src.data.download_data import download_file
 from src.get_parser import get_parser
 from src.data.data_preprocessing import *
 from models.model import sentimentRNN
-
-args = get_parser()
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--vocab_size", type=int, help="Give the filename for the downloaded data")
-parser.add_argument("--output_size", type=int, default=1, help="Output size for the rnn")
-parser.add_argument("--embedding_dim", type=int, default=400, help="Size of the embeddings for rnn")
-parser.add_argument("--hidden_dim", type=int, default=256, help="hidden dimension of the rnn")
-parser.add_argument("--n_layers", type=int, default=2, help="number of layers for the rnn")
-args1 = vars(parser.parse_args())
 
 def download_data(args):
     if args["download"]:
@@ -39,14 +32,21 @@ if __name__ == '__main__':
     download_data(args)
 
     reviews_ints, encoded_labels, vocab_to_int = process_data("data/raw/reviews.txt", "data/raw/labels.txt")
-    #features = pad_features(args, reviews_ints)
+    features = pad_features(args, reviews_ints)
+    vocab_size = len(vocab_to_int) + 1
+    loader = DataLoadSplit(encoded_labels, features, args)
 
-    if args['vocab_size'] is None:
-        args['vocab_size'] = len(vocab_to_int) + 1
+    model = sentimentRNN(vocab_size, args)
+    print(f"This is the model we are using : {model}")
+    criterion = nn.BCELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=args["learning_rate"])
+    print("Loading the data...")
+    loaders = loader.load_split_data()
+    train = TrainingRNN(model, loaders, args)
+    args_train = [criterion, optimizer, args["epochs"], args["batch_size"], args["print_every"]]
+    print("Start training")
+    if args["train"]:
+        train.trainRNN(criterion, optimizer)
+        torch.save(model.state_dict(), "models/saved_models/model_test.pth")
 
-    #net = sentimentRNN(**args1)
-    print(args["vocab_size"], args["output_size"], args["embedding_dim"], args["hidden_dim"], args["n_layers"])
-    net = sentimentRNN(args["vocab_size"], args["output_size"], args["embedding_dim"], args["hidden_dim"], args["n_layers"])
-    print(net)
-
-
+    
