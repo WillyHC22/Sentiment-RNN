@@ -3,18 +3,20 @@ import torch.nn as nn
 
 class sentimentRNN(nn.Module):
 
-    def __init__(self, vocab_size, output_size, embedding_dim, hidden_dim, n_layers, drop_prob=0.5):
+    def __init__(self, vocab_size, args):
         super(sentimentRNN, self).__init__()
 
-        self.output_size = output_size
-        self.n_layers = n_layers
-        self.hidden_dim = hidden_dim
+        self.output_size = args["output_size"]
+        self.n_layers = args["n_layers"]
+        self.hidden_dim = args["hidden_dim"]
+        self.embedding_dim = args["embedding_dim"]
         self.train_on_gpu=torch.cuda.is_available()
+        self.drop_prob = args["drop_rate"]
 
-        self.embedding = nn.Embedding(vocab_size, embedding_dim)
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim, n_layers, dropout=drop_prob, batch_first = True)
+        self.embedding = nn.Embedding(vocab_size, self.embedding_dim)
+        self.lstm = nn.LSTM(self.embedding_dim, self.hidden_dim, self.n_layers, dropout=self.drop_prob, batch_first = True)
         self.dropout = nn.Dropout(0.3)
-        self.fc = nn.Linear(hidden_dim, output_size) 
+        self.fc = nn.Linear(self.hidden_dim, self.output_size) 
         self.sig = nn.Sigmoid()
 
     def forward(self, x, hidden):
