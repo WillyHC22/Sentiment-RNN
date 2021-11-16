@@ -17,8 +17,7 @@ def get_parser():
     parser.add_argument("--print_every", default=100, type=int, help="Number of step for one update of the results")
     parser.add_argument("-bs", "--batch_size", default=50, type=int, help="number of epochs for training")
     parser.add_argument("--train",  action="store_true", help="Use this argument if you want training")
-
-
+    parser.add_argument("--load",  action="store_true", help="Use this argument if you want to load the model")
 
     args = vars(parser.parse_args())
 

@@ -2,6 +2,8 @@ import torch
 import numpy as np
 import torch.nn as nn
 from tqdm import tqdm
+from string import punctuation
+from src.data.data_preprocessing import pad_features
 from torch.utils.data import TensorDataset, DataLoader
 #from models.model import sentimentRNN
 
@@ -106,4 +108,39 @@ class TrainingRNN():
                         "Val Loss: {:.6f}".format(np.mean(val_losses)))
 
 
+class TestingRNN(TrainingRNN):
+    def __init__(self, vocab_to_int, models, loaders, args):
+        super().__init__(models, loaders, args)
+        # self.models = models
+        # self.loaders = loaders
+        # self.args = args
+        self.vocab_to_int = vocab_to_int
 
+    def tokenize_review(self, review):
+        review = review.lower()
+        text = ''.join([char for char in review if char not in punctuation])
+        words = text.split()
+        review_ints = [[self.vocab_to_int.get(word, 0) for word in words]]
+        return review_ints
+
+    def predict(self, review_str):
+        self.model.eval()
+        review_ints = self.tokenize_review(review_str)
+        features = pad_features(self.args, review_ints)
+        feature_tensor = torch.from_numpy(features)
+        batch_size = feature_tensor.size(0)
+        h = self.model.init_hidden(batch_size)
+        #if(self.check_gpu):
+        #    feature_tensor = feature_tensor.cuda()
+        output, h = self.model(feature_tensor, h)
+        pred = torch.round(output.squeeze()) 
+        print('Prediction value, pre-rounding: {:.6f}'.format(output.item()))
+
+        print("========================")
+        print(review_str)
+        if(pred.item()==1): 
+            print("\\\This review is negative...///")
+            print("========================")
+        else:
+            print("\\\This review is positive !///")
+            print("========================")

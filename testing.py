@@ -1,7 +1,7 @@
 import argparse
 import torch
 import torch.nn as nn
-from training import DataLoadSplit, TrainingRNN
+from training import DataLoadSplit, TrainingRNN, TestingRNN
 from src.data.download_data import download_file
 from src.get_parser import get_parser
 from src.data.data_preprocessing import *
@@ -45,8 +45,19 @@ if __name__ == '__main__':
     train = TrainingRNN(model, loaders, args)
     args_train = [criterion, optimizer, args["epochs"], args["batch_size"], args["print_every"]]
     print("Start training")
+    model_path = "models/saved_models/model_test.pth"
     if args["train"]:
         train.trainRNN(criterion, optimizer)
-        torch.save(model.state_dict(), "models/saved_models/model_test.pth")
+        torch.save(model.state_dict(), model_path)
+    elif args["load"]:
+        print(f"Loading our saved model : {model_path}")
+        model.load_state_dict(torch.load(model_path, map_location=torch.device("cpu")))
+    
+    testing = TestingRNN(vocab_to_int, model, loaders, args)
 
+    with open("data/raw/reviews.txt", "r") as f :
+        reviews = f.read()
+    reviews = reviews.split('\n')
+    for review in reviews[:10]:
+        testing.predict(review_str = review)
     
