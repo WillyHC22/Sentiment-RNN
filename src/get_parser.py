@@ -21,6 +21,7 @@ def get_parser():
     parser.add_argument("--train",  action="store_true", help="Use this argument if you want training")
     parser.add_argument("--load",  action="store_true", help="Use this argument if you want to load the model")
     parser.add_argument("--eval", action="store_true", help="Use this argument if you want evaluation")
+    parser.add_argument("--predict", action="store_true", help="Use this argument if you want inference test")
     args = vars(parser.parse_args())
 
     if args["download"] and (args["url"] is None or args["file_name"] is None):

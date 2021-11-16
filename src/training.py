@@ -5,7 +5,6 @@ from tqdm import tqdm
 from string import punctuation
 from src.data.data_preprocessing import pad_features
 from torch.utils.data import TensorDataset, DataLoader
-#from models.model import sentimentRNN
 
 
 class DataLoadSplit():
@@ -168,9 +167,9 @@ class TestingRNN(TrainingRNN):
         h = self.model.init_hidden(batch_size)
         output, h = self.model(feature_tensor, h)
         pred = torch.round(output.squeeze()) 
-        print('Prediction value, pre-rounding: {:.6f}'.format(output.item()))
 
         print("========================")
+        print('Prediction value, pre-rounding: {:.6f}'.format(output.item()))
         print(review_str)
         if(pred.item()==1): 
             print("\\\This review is negative...///")
