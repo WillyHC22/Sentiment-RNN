@@ -37,27 +37,31 @@ if __name__ == '__main__':
     loader = DataLoadSplit(encoded_labels, features, args)
 
     model = sentimentRNN(vocab_size, args)
+    model_path = "models/saved_models/model_test.pth"
+    if args["load"]:
+        print(f"Loading our saved model : {model_path}")
+        model.load_state_dict(torch.load(model_path, map_location=torch.device("cpu")))
     print(f"This is the model we are using : {model}")
     criterion = nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args["learning_rate"])
     print("Loading the data...")
     loaders = loader.load_split_data()
     train = TrainingRNN(model, loaders, args)
-    args_train = [criterion, optimizer, args["epochs"], args["batch_size"], args["print_every"]]
-    print("Start training")
-    model_path = "models/saved_models/model_test.pth"
+    testing = TestingRNN(vocab_to_int, model, loaders, args)
     if args["train"]:
+        print("==== TRAINING PHASE ====")
         train.trainRNN(criterion, optimizer)
         torch.save(model.state_dict(), model_path)
-    elif args["load"]:
-        print(f"Loading our saved model : {model_path}")
-        model.load_state_dict(torch.load(model_path, map_location=torch.device("cpu")))
+    if args["eval"]:
+        print("==== EVALUATION PHASE ====")
+        testing.evaluateRNN(criterion)
     
     testing = TestingRNN(vocab_to_int, model, loaders, args)
-
-    with open("data/raw/reviews.txt", "r") as f :
-        reviews = f.read()
-    reviews = reviews.split('\n')
-    for review in reviews[:10]:
-        testing.predict(review_str = review)
+    testing.evaluateRNN(criterion)
+    if args["predict"]:
+        with open("data/raw/reviews.txt", "r") as f :
+            reviews = f.read()
+        reviews = reviews.split('\n')
+        for review in reviews[:10]:
+            testing.predict(review_str = review)
     

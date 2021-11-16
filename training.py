@@ -114,6 +114,7 @@ class TestingRNN(TrainingRNN):
         # self.models = models
         # self.loaders = loaders
         # self.args = args
+        self.test_loader = loaders["test_loader"]
         self.vocab_to_int = vocab_to_int
 
     def tokenize_review(self, review):
@@ -123,6 +124,41 @@ class TestingRNN(TrainingRNN):
         review_ints = [[self.vocab_to_int.get(word, 0) for word in words]]
         return review_ints
 
+    def evaluateRNN(self, criterion):
+        test_losses = []
+        num_correct = 0
+
+        test_on_gpu = self.check_gpu()
+        if test_on_gpu:
+            self.model.cuda()
+        
+        h = self.model.init_hidden(self.args["batch_size"])
+        self.model.eval()
+
+        for inputs, labels in tqdm(self.test_loader):
+            h = tuple([each.data for each in h])
+
+            if test_on_gpu:
+                inputs, labels = inputs.cuda(), labels.cuda()
+            
+            output, h = self.model(inputs, h)
+
+            test_loss = criterion(output.squeeze(), labels.float())
+            test_losses.append(test_loss.item())
+
+            pred = torch.round(output.squeeze())
+            correct_tensor = pred.eq(labels.float().view_as(pred))
+            if not test_on_gpu:
+                correct = np.squeeze(correct_tensor.numpy())
+            else:
+                correct = np.squeeze(correct_tensor.cpu().numpy())
+            num_correct += np.sum(correct)
+        
+        print(f"TEST LOSS: {np.mean(test_losses)}")
+        acc = num_correct/len(self.test_loader.dataset)
+        print(f"ACCURACY : {acc}")
+
+
     def predict(self, review_str):
         self.model.eval()
         review_ints = self.tokenize_review(review_str)
@@ -130,8 +166,6 @@ class TestingRNN(TrainingRNN):
         feature_tensor = torch.from_numpy(features)
         batch_size = feature_tensor.size(0)
         h = self.model.init_hidden(batch_size)
-        #if(self.check_gpu):
-        #    feature_tensor = feature_tensor.cuda()
         output, h = self.model(feature_tensor, h)
         pred = torch.round(output.squeeze()) 
         print('Prediction value, pre-rounding: {:.6f}'.format(output.item()))

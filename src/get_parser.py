@@ -1,5 +1,7 @@
 import argparse
 
+from torch.serialization import storage_to_tensor_type
+
 def get_parser():
     parser = argparse.ArgumentParser(description = "Download file from url")
     parser.add_argument("-u", "--url", type=str, help="Give the url link of the data you want to download")
@@ -18,7 +20,7 @@ def get_parser():
     parser.add_argument("-bs", "--batch_size", default=50, type=int, help="number of epochs for training")
     parser.add_argument("--train",  action="store_true", help="Use this argument if you want training")
     parser.add_argument("--load",  action="store_true", help="Use this argument if you want to load the model")
-
+    parser.add_argument("--eval", action="store_true", help="Use this argument if you want evaluation")
     args = vars(parser.parse_args())
 
     if args["download"] and (args["url"] is None or args["file_name"] is None):
